@@ -112,6 +112,7 @@ def tongue_from_stand(stand_path, socket_y):
     m = trimesh.Trimesh(np.c_[v[:, 2] + socket_y - 2.0, v[:, 0], v[:, 1]], m.faces)  # cyclic permutation, no flip
     if not m.is_volume:
         m.fix_normals()
+    m.apply_translation([0, 0, 0.3])   # top 0.3 mm inside the floor: a solid joint, not a touching face
     return m
 
 def main(stand_path):
