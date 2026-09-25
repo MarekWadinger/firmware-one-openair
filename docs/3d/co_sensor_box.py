@@ -8,8 +8,9 @@ Usage:  .venv/bin/python docs/3d/co_sensor_box.py <path to airgradient-stand-stl
 Output: docs/3d/co_sensor_box_body.stl, docs/3d/co_sensor_box_lid.stl
 
 Box frame: X = across the case (viewer's left is -X), Y = case depth (front is -Y),
-Z = up from the case's top face. v2: the sensor stands against the back wall, cell facing
-forward through a round opening in the front; box depth equals the case depth.
+Z = up from the case's top face. v3: the CO sensor stands against the back wall, hard left, cell
+facing forward through a round opening; the DFR0032 buzzer hangs on posts on the front wall, hard
+right, buzzer through its own opening. The two boards overlap 0.7 mm in width at different depths.
 """
 import sys
 import numpy as np
@@ -29,6 +30,12 @@ BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot board, standing: 37 across (X), 32 t
 HOLE_DX, HOLE_DZ = 30.0, 25.0     # mounting-hole grid
 STANDOFF_H, STANDOFF_D, SCREW_D = 4.0, 6.0, 2.6   # posts on the back wall, M3 self-tapping into 2.6 mm
 OUT_W = 70.0       # spans both sockets
+# DFRobot DFR0032 buzzer (from its dimension drawing): 22 x 30 board, two 3.2 mm holes 15 mm apart
+# 3.4 mm in from one short edge, 12 mm buzzer centred 10.9 mm from that edge, connector on the other edge.
+BUZZ_W, BUZZ_H = 30.0, 22.0       # mounted with the 30 mm side horizontal, holes on the right edge
+BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
+BUZZ_D, BUZZ_CYL_H, BUZZ_CYL_IN = 12.0, 10.0, 10.9
+BUZZ_POST_H = 6.0                 # board this far behind the front wall; the buzzer pokes through
 CORNER_R = 6.0
 
 # ---- from the case STL (case coordinates) ---------------------------------
@@ -90,8 +97,9 @@ def main(stand_path):
     cavity = extrude(rrect(X0 + WALL, Y0 + WALL, X1 - WALL, Y1 - WALL, CORNER_R - WALL), FLOOR, OUT_H + 1)
     body = diff(body, cavity)
 
-    # board stands against the back wall, centred in X, cell facing the front
-    bcx = (X0 + X1) / 2
+    # board stands against the back wall, hard left, rotated 180 deg so the Gravity plug faces right
+    # and its cable drops through the left floor opening into the case (DIP switch ends up at the bottom)
+    bcx = X0 + WALL + 0.5 + BOARD_W / 2
     bcz = FLOOR + 0.5 + BOARD_H / 2
     y_wall = Y1 - WALL                              # inner face of the back wall
     for sx in (-1, 1):
@@ -112,13 +120,28 @@ def main(stand_path):
     op.apply_translation([bcx, Y0 + WALL / 2, bcz])
     body = diff(body, op)
 
+    # buzzer board on posts on the inner face of the front wall, hard right, buzzer through the front
+    y_front = Y0 + WALL
+    bzx1 = X1 - WALL - 0.5
+    bzcz = bcz
+    for sz in (-1, 1):
+        cx, cz = bzx1 - BUZZ_HOLE_IN, bzcz + sz * BUZZ_HOLE_DZ / 2
+        post = trimesh.creation.cylinder(radius=STANDOFF_D / 2, height=BUZZ_POST_H + WALL, sections=48)
+        post.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+        post.apply_translation([cx, y_front + BUZZ_POST_H / 2 - WALL / 2, cz])
+        body = union(body, post)
+        hole = trimesh.creation.cylinder(radius=BUZZ_SCREW_D / 2, height=BUZZ_POST_H + 1.0, sections=32)
+        hole.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+        hole.apply_translation([cx, y_front + BUZZ_POST_H / 2 - 0.5, cz])
+        body = diff(body, hole)
+    op = trimesh.creation.cylinder(radius=BUZZ_D / 2 + 1.0, height=WALL + 2, sections=96)
+    op.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+    op.apply_translation([bzx1 - BUZZ_CYL_IN, Y0 + WALL / 2, bzcz])
+    body = diff(body, op)
+
     # floor openings exactly over the case's two vent slots between the sockets
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, VENT_Z[0], yb, VENT_Z[1], 1.9), -1, FLOOR + 1))
-
-    # cable notch: back wall, left end, at floor level (Gravity plug faces left)
-    notch = extrude(sbox(X0 + WALL + 1, Y1 - WALL - 1, X0 + WALL + 9, Y1 + 1), FLOOR, FLOOR + 5)
-    body = diff(body, notch)
 
     # the two hooks, straight under the floor
     for sy in SOCKET_Y:
@@ -131,7 +154,7 @@ def main(stand_path):
     lid = union(lid, extrude(Polygon(lip_out.exterior.coords, [lip_in.exterior.coords]), LID_T, LID_T + LID_LIP))
     lcy = (Y0 + Y1) / 2
     for i in range(5):
-        cx = bcx + (i - 2) * 12.0
+        cx = (X0 + X1) / 2 + (i - 2) * 12.0
         lid = diff(lid, extrude(rrect(cx - 2, lcy - 10, cx + 2, lcy + 10, 1.9), -1, LID_T + 1))
 
     out = "docs/3d/"
