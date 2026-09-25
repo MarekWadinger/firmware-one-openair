@@ -39,6 +39,8 @@ BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right ed
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
 BUZZ_D, BUZZ_CYL_IN = 12.0, 10.9
 BUZZ_POST_H = 4.5                 # board this far behind the front plate; buzzer pokes through
+BACK_HOLE_D, BACK_HOLE_PITCH = 2.4, 4.5   # perforated back wall, staggered grid
+BACK_CHAMFER = 2.0                        # top-rear edge tilts back, like the case
 
 # ---- from the case STL (case coordinates) ---------------------------------
 SOCKET_Y = (-112.5, -52.5)        # socket centres, 60 mm apart, same top and bottom
@@ -78,6 +80,11 @@ def extrude_y(poly_xz, y0, y1):
 
 def union(a, b):  return trimesh.boolean.union([a, b], engine="manifold")
 def diff(a, b):   return trimesh.boolean.difference([a, b], engine="manifold")
+
+def extrude_x(poly_yz, x0, x1):
+    m = trimesh.creation.extrude_polygon(poly_yz, x1 - x0)
+    v = m.vertices
+    return trimesh.Trimesh(np.c_[v[:, 2] + x0, v[:, 0], v[:, 1]], m.faces)   # cyclic permutation, no flip
 
 def cyl_y(r, y0, y1, x, z, n=64):
     c = trimesh.creation.cylinder(radius=r, height=y1 - y0, sections=n)
@@ -130,6 +137,29 @@ def main(stand_path):
             body = union(body, cyl_y(STANDOFF_D / 2, y_back - STANDOFF_H, y_back + WALL / 2, cx, cz))
             body = diff(body, cyl_y(SCREW_D / 2, y_back - STANDOFF_H - 0.5, y_back - STANDOFF_H + 4.5, cx, cz, 32))
     cell_front_y = y_back - STANDOFF_H - 1.6 - CELL_H
+    posts = [(bcx + sx * HOLE_DX / 2, bcz + sz * HOLE_DZ / 2) for sx in (-1, 1) for sz in (-1, 1)]
+
+    # perforated back wall: staggered grid of small holes, clear of the posts and the corner curves
+    holes = []
+    z = FLOOR + 3.0
+    row = 0
+    while z < OUT_H - WALL - 2.5:
+        x = X0 + WALL + 3.0 + (BACK_HOLE_PITCH / 2 if row % 2 else 0)
+        while x < X1 - WALL - 2.5:
+            near_post = any(np.hypot(x - px, z - pz) < STANDOFF_D / 2 + BACK_HOLE_D / 2 + 1.0 for px, pz in posts)
+            in_corner = not inner.buffer(-(BACK_HOLE_D / 2 + 1.0)).contains(__import__("shapely").geometry.Point(x, z))
+            if not near_post and not in_corner:
+                holes.append(cyl_y(BACK_HOLE_D / 2, y_back - 1, Y1 + 1, x, z, 24))
+            x += BACK_HOLE_PITCH
+        z += BACK_HOLE_PITCH * 0.866
+        row += 1
+    body = diff(body, trimesh.util.concatenate(holes))
+    print("back wall holes:", len(holes))
+
+    # top-rear edge chamfer (the case's back tilts away like this)
+    c = BACK_CHAMFER
+    wedge = Polygon([(Y1 - c, OUT_H), (Y1, OUT_H - c), (Y1 + 1, OUT_H - c), (Y1 + 1, OUT_H + 1), (Y1 - c, OUT_H + 1)])
+    body = diff(body, extrude_x(wedge, X0 - 1, X1 + 1))
 
     # floor openings exactly over the case's vent slots; the two cables go through them
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
