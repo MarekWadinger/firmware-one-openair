@@ -22,7 +22,7 @@ Files:
   horizontal, holes on its right edge, connector left. The 12 mm buzzer pokes through its opening.
   Cable through the right floor opening.
 - The boards overlap 7 mm in width at different depths; the CO cell clears the buzzer board.
-- Two floor openings exactly over the case's two vent slots between the sockets. No other holes.
+- Two floor openings exactly over the case's two vent slots between the sockets, and two matching slots in the top. No other holes.
 - Buzzer dimensions from DFRobot's drawing: 22 × 30 mm, Ø3.2 holes 15 mm apart 3.4 mm from one
   short edge, buzzer centred 10.9 mm from that edge.
 

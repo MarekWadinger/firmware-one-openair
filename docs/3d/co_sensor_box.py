@@ -129,10 +129,10 @@ def main(stand_path):
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, VENT_Z[0], yb, VENT_Z[1], 1.9), -1, FLOOR + 1))
 
-    # vent slots in the top, case style
-    for i in range(5):
-        cx = (X0 + X1) / 2 + (i - 2) * 10.0
-        body = diff(body, extrude(rrect(cx - 2, (Y0 + Y1) / 2 - 10, cx + 2, (Y0 + Y1) / 2 + 10, 1.9), OUT_H - WALL - 1, OUT_H + 1))
+    # two vent slots in the top, same size and positions as the floor openings
+    ymid = (Y0 + Y1) / 2
+    for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
+        body = diff(body, extrude(rrect(ya, ymid - 2, yb, ymid + 2, 1.9), OUT_H - WALL - 1, OUT_H + 1))
 
     # hooks under the floor
     for sy in SOCKET_Y:
