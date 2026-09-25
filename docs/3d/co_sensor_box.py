@@ -48,7 +48,9 @@ CASE_VENTS_BETWEEN_SOCKETS = [(-108.0, -87.0), (-78.0, -57.0)]
 VENT_Z = (-2.0, 2.0)
 
 # ---- derived --------------------------------------------------------------
-X0, X1 = SOCKET_Y[0] - HOOK_W / 2, SOCKET_Y[1] + HOOK_W / 2     # 64 wide: hooks flush with the sides
+HOOK_EDGE_MARGIN = 4.5            # flat floor beyond the hooks so the 6 mm corner curve clears them (>= 4.2)
+X0 = SOCKET_Y[0] - HOOK_W / 2 - HOOK_EDGE_MARGIN                 # 73 wide
+X1 = SOCKET_Y[1] + HOOK_W / 2 + HOOK_EDGE_MARGIN
 OUT_W = X1 - X0
 Y0, Y1 = CASE_FRONT_Z, CASE_BACK_Z                             # as deep as the case
 OUT_D = Y1 - Y0
@@ -113,7 +115,7 @@ def tongue_from_stand(stand_path, socket_y):
     return m
 
 def main(stand_path):
-    outer = profile(X0, 0, X1, OUT_H, CORNER_R, plinth=FLOOR)
+    outer = profile(X0, 0, X1, OUT_H, CORNER_R)
     inner = profile(X0 + WALL, FLOOR, X1 - WALL, OUT_H - WALL, CORNER_R - WALL)
     body = diff(extrude_y(outer, Y0, Y1), extrude_y(inner, Y0 - 1, Y1 - WALL))   # open at the front
 
