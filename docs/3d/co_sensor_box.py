@@ -20,8 +20,8 @@ from shapely.geometry import box as sbox, Polygon
 from shapely.affinity import translate
 
 # ---- tunables (mm) --------------------------------------------------------
-CELL_H = 22.0      # height of the black electrochemical cell above the board. MEASURE IT.
-CELL_D = 21.0      # diameter of the cell. MEASURE IT.
+CELL_H = 25.0      # height of the black electrochemical cell above the board (measured)
+CELL_D = 24.0      # diameter of the cell (measured)
 WALL = 1.6
 FLOOR = 2.0
 PLATE_T = 2.0      # front plate
@@ -37,7 +37,7 @@ OUT_H = 40.0
 # short edge, 12 mm buzzer centred 10.9 from that edge, connector on the other edge.
 BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right edge, connector left
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
-BUZZ_D, BUZZ_CYL_IN = 12.0, 10.9
+BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 8.0   # cylinder height measured
 BUZZ_POST_H = 4.5                 # board this far behind the front plate; buzzer pokes through
 
 # ---- from the case STL (case coordinates) ---------------------------------

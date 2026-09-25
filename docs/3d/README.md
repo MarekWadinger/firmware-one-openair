@@ -26,11 +26,10 @@ Files:
 - Buzzer dimensions from DFRobot's drawing: 22 × 30 mm, Ø3.2 holes 15 mm apart 3.4 mm from one
   short edge, buzzer centred 10.9 mm from that edge.
 
-## Before printing: measure two things
+## Measured parts
 
-- `CELL_D`: diameter of the black cell, default 21 mm. The front opening is 2 mm larger.
-- `CELL_H`: height of the cell above the board, default 22 mm. The generator prints the clearance
-  between the cell and the buzzer board; keep it positive.
+CO cell: Ø24 mm, 25 mm above the board. Buzzer cylinder: 8 mm tall. The front opening for the cell
+is Ø26; the cell ends 2 mm behind the plate. The generator prints the cell-to-buzzer clearance.
 
 ## Regenerate
 
