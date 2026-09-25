@@ -97,6 +97,13 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define GPIO_EXPANSION_CARD_POWER 4
 #define GPIO_IIC_RESET 3
 
+/** External CO sensor (DFRobot SEN0466 on I2C1) + passive buzzer (DFRobot DFR0032 on IO1 pin 6) */
+#define CO_I2C_ADDR 0x74
+#define CO_UPDATE_INTERVAL 2000 /** ms */
+#define CO_ALARM_PPM 1          /** beep while CO >= this; tune to taste */
+#define TEST_BUZZER_CO2_PPM 0    /** TEST ONLY: also beep while CO2 >= this. 0 = disabled */
+#define BUZZER_PIN 3            /** shared with GPIO_IIC_RESET, only used by an optional cellular card */
+
 #define MINUTES() ((uint32_t)(esp_timer_get_time() / 1000 / 1000 / 60))
 
 static MqttClient mqttClient(Serial);
@@ -143,6 +150,8 @@ static void updatePm(void);
 static void updateSPS30(SPS30 &sensor, int channel);
 static void sendDataToServer(void);
 static void tempHumUpdate(void);
+static void coUpdate(void);
+static void coSensorInit(void);
 static void co2Update(void);
 static void printMeasurements();
 static void mdnsInit(void);
@@ -173,6 +182,7 @@ AgSchedule measurementSchedule(WIFI_MEASUREMENT_INTERVAL, newMeasurementCycle);
 AgSchedule co2Schedule(SENSOR_CO2_UPDATE_INTERVAL, co2Update);
 AgSchedule pmsSchedule(SENSOR_PM_UPDATE_INTERVAL, updatePm);
 AgSchedule tempHumSchedule(SENSOR_TEMP_HUM_UPDATE_INTERVAL, tempHumUpdate);
+AgSchedule coSchedule(CO_UPDATE_INTERVAL, coUpdate);
 AgSchedule tvocSchedule(SENSOR_TVOC_UPDATE_INTERVAL, updateTvoc);
 AgSchedule watchdogFeedSchedule(60000, wdgFeedUpdate);
 AgSchedule checkForUpdateSchedule(FIRMWARE_CHECK_FOR_UPDATE_MS, checkForFirmwareUpdate);
@@ -180,6 +190,10 @@ AgSchedule networkSignalCheckSchedule(10000, networkSignalCheck);
 AgSchedule printMeasurementsSchedule(6000, printMeasurements);
 
 void setup() {
+  /** Buzzer first: a HIGH or floating GPIO3 makes it sound continuously */
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
   /** Serial for print debug message */
   Serial.begin(115200);
   delay(100); /** For bester show log */
@@ -230,6 +244,7 @@ void setup() {
   /** Init sensor */
   boardInit();
   setMeasurementMaxPeriod();
+  coSensorInit(); // before the network step, so the ALA threshold is set even without WiFi
 
   bool connectToNetwork = true;
   if (ag->isOne()) { // Offline mode only available for indoor monitor
@@ -347,6 +362,7 @@ void loop() {
     tvocSchedule.run();
   }
   if (ag->isOne()) {
+    coSchedule.run();
     if (configuration.hasSensorPMS1) {
       ag->pms5003.handle();
       static bool pmsConnected = false;
@@ -1098,6 +1114,9 @@ void initializeNetwork() {
   // Check if cellular module available
   agSerial = new AgSerial(Wire);
   agSerial->init(GPIO_IIC_RESET);
+  // ponytail: GPIO3 is the buzzer. Pull it LOW again right away; init() set it HIGH as the
+  // cellular card's reset line. This makes a cellular card undetectable, which this unit has none of.
+  gpio_set_level((gpio_num_t)BUZZER_PIN, 0);
   if (agSerial->open()) {
     Serial.println("Cellular module found");
     // Initialize cellular module and use cellular as agClient
@@ -1651,6 +1670,105 @@ static void tempHumUpdate(void) {
     measurements.update(Measurements::Humidity, utils::getInvalidHumidity());
     Serial.println("SHT read failed");
   }
+}
+
+/** DFRobot SEN0466 protocol: 9-byte frames {0xFF, 0x01, cmd, d0..d4, checksum},
+ * checksum = two's complement of bytes 1..7. Same as DFRobot_MultiGasSensor. */
+static uint8_t coChecksum(const uint8_t *p) {
+  uint8_t s = 0;
+  for (int i = 1; i <= 7; i++) {
+    s += p[i];
+  }
+  return (~s) + 1;
+}
+
+static bool coCommandData(uint8_t cmd, const uint8_t *d5, uint8_t *reply) {
+  uint8_t frame[9] = {0xFF, 0x01, cmd, d5[0], d5[1], d5[2], d5[3], d5[4], 0};
+  frame[8] = coChecksum(frame);
+  Wire.beginTransmission(CO_I2C_ADDR);
+  Wire.write((uint8_t)0);
+  Wire.write(frame, 9);
+  if (Wire.endTransmission() != 0) {
+    return false;
+  }
+  delay(10);
+  Wire.beginTransmission(CO_I2C_ADDR);
+  Wire.write((uint8_t)0);
+  if (Wire.endTransmission() != 0) {
+    return false;
+  }
+  if (Wire.requestFrom((uint8_t)CO_I2C_ADDR, (uint8_t)9) != 9) {
+    return false;
+  }
+  for (int i = 0; i < 9; i++) {
+    reply[i] = Wire.read();
+  }
+  return coChecksum(reply) == reply[8];
+}
+
+static bool coCommand(uint8_t cmd, uint8_t arg, uint8_t *reply) {
+  uint8_t d5[5] = {arg, 0, 0, 0, 0};
+  return coCommandData(cmd, d5, reply);
+}
+
+static void coSensorInit(void) {
+  uint8_t reply[9];
+  // 0x78 = set acquire mode, 0x04 = passive (answer only when asked)
+  bool ok = coCommand(0x78, 0x04, reply) && reply[2] == 1;
+  Serial.printf("CO sensor at 0x%02X: %s\n", CO_I2C_ADDR, ok ? "found" : "not found");
+  // 0x89 = threshold alarm on the sensor's ALA pin: {ON=1, threshold hi, lo, mode, 0}
+  // mode 1 = alarm while above threshold. Persistence across power cycles is undocumented,
+  // so set it at every boot.
+  uint8_t thr[5] = {1, (uint8_t)(CO_ALARM_PPM >> 8), (uint8_t)(CO_ALARM_PPM & 0xFF), 1, 0};
+  ok = false;
+  for (int i = 0; i < 5 && !ok; i++) { // the sensor sometimes NACKs this; retry
+    ok = coCommandData(0x89, thr, reply) && reply[2] == 1;
+    delay(200);
+  }
+  Serial.printf("CO sensor ALA threshold %d ppm: %s\n", CO_ALARM_PPM, ok ? "set" : "failed");
+  if (!ok) { // never leave a stale rule active: switch the sensor's alarm off instead
+    uint8_t off[5] = {0, 0, 0, 1, 0};
+    for (int i = 0; i < 5 && !ok; i++) {
+      ok = coCommandData(0x89, off, reply) && reply[2] == 1;
+      delay(200);
+    }
+    Serial.printf("CO sensor ALA switched off: %s\n", ok ? "yes" : "failed");
+  }
+}
+
+static void coUpdate(void) {
+  static bool wasOk = false;
+  static bool alarmOn = false;
+  uint8_t reply[9];
+  float ppm = NAN;
+  bool ok = coCommand(0x86, 0, reply); // 0x86 = get gas concentration
+  if (ok) {
+    ppm = (reply[2] << 8) | reply[3];
+    if (reply[5] == 1) {
+      ppm *= 0.1f;
+    } else if (reply[5] == 2) {
+      ppm *= 0.01f;
+    }
+    // ponytail: no temperature compensation; add the DFRobot formula if readings drift with room temp
+  }
+  if (ok != wasOk) { // log only when the sensor appears or disappears
+    Serial.printf("CO sensor %s\n", ok ? "connected" : "not responding");
+    wasOk = ok;
+  }
+  oledDisplay.co = ppm;
+
+  bool alarm = ok && ppm >= CO_ALARM_PPM;
+  if (TEST_BUZZER_CO2_PPM > 0 && measurements.getAverage(Measurements::CO2) >= TEST_BUZZER_CO2_PPM) {
+    alarm = true;
+  }
+  if (alarm) {
+    tone(BUZZER_PIN, 2000, CO_UPDATE_INTERVAL / 2); // beep half of every cycle
+  } else if (alarmOn) {
+    noTone(BUZZER_PIN);
+    pinMode(BUZZER_PIN, OUTPUT); // noTone detaches the pin; drive it LOW again
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+  alarmOn = alarm;
 }
 
 /* Set max period for each measurement type based on sensor update interval*/
