@@ -28,8 +28,9 @@ Files:
 
 ## Measured parts
 
-CO cell: Ø24 mm, 25 mm above the board. Buzzer cylinder: 8 mm tall. The front opening for the cell
-is Ø26; the cell ends 2 mm behind the plate. The generator prints the cell-to-buzzer clearance.
+CO cell: Ø24 mm, 25 mm above the board. Buzzer cylinder: 8 mm tall. Both front openings are cut at
+the part's own diameter and only frame it: the cell ends 2 mm behind the plate, the buzzer 0.5 mm.
+The generator prints the cell-to-buzzer clearance.
 
 ## Regenerate
 
@@ -65,7 +66,7 @@ has slots over the case's vent slots so the case still breathes.
 | Box outside | 73 × 36.2 × 40 |
 | Walls / floor / plate | 1.6 / 2.0 / 2.0 |
 | CO posts | 30 × 25 grid on the back wall, Ø6, 4 high, 2.6 holes |
-| Buzzer posts | 15 mm apart on the front plate, Ø6, 4.5 high, 2.6 holes |
-| Front openings | Ø CELL_D + 2 (CO cell), Ø 14 (buzzer) |
+| Buzzer posts | 15 mm apart on the front plate, Ø6, 6.5 high, 2.6 holes |
+| Front openings | Ø 24 (CO cell), Ø 12 (buzzer), parts sit just behind |
 | Floor openings | 21 × 4, at the case's vent positions between the sockets |
 | Hooks | 4 thick, 8.7 deep, 60 mm apart, profile copied from the stand |

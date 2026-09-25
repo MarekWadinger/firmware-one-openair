@@ -38,7 +38,9 @@ OUT_H = 40.0
 BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right edge, connector left
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
 BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 8.0   # cylinder height measured
-BUZZ_POST_H = 4.5                 # board this far behind the front plate; buzzer pokes through
+BUZZ_POST_H = 6.5                 # board this far behind the front plate; buzzer ends 0.5 mm behind the plate face
+CELL_OPEN_CLEAR = 0.0             # front openings: this much wider than the part (0 = frames it, part stays behind)
+BUZZ_OPEN_CLEAR = 0.0
 
 # ---- from the case STL (case coordinates) ---------------------------------
 SOCKET_Y = (-112.5, -52.5)        # socket centres, 60 mm apart, same top and bottom
@@ -149,7 +151,7 @@ def main(stand_path):
     lip_out = profile(X0 + WALL + CLEAR, FLOOR + CLEAR, X1 - WALL - CLEAR, OUT_H - WALL - CLEAR, CORNER_R - WALL)
     lip_in = profile(X0 + WALL + CLEAR + 1.2, FLOOR + CLEAR + 1.2, X1 - WALL - CLEAR - 1.2, OUT_H - WALL - CLEAR - 1.2, max(CORNER_R - WALL - 1.2, 0.5))
     plate = union(plate, extrude_y(Polygon(lip_out.exterior.coords, [lip_in.exterior.coords]), Y0 + PLATE_T, Y0 + PLATE_T + PLATE_LIP))
-    plate = diff(plate, cyl_y(CELL_D / 2 + 1.0, Y0 - 1, Y0 + PLATE_T + 1, bcx, bcz, 96))
+    plate = diff(plate, cyl_y(CELL_D / 2 + CELL_OPEN_CLEAR / 2, Y0 - 1, Y0 + PLATE_T + 1, bcx, bcz, 96))
     bzx1 = X1 - WALL - MARGIN
     bzcz = bcz
     y_plate = Y0 + PLATE_T
@@ -157,7 +159,7 @@ def main(stand_path):
         cx, cz = bzx1 - BUZZ_HOLE_IN, bzcz + sz * BUZZ_HOLE_DZ / 2
         plate = union(plate, cyl_y(STANDOFF_D / 2, y_plate - PLATE_T / 2, y_plate + BUZZ_POST_H, cx, cz))
         plate = diff(plate, cyl_y(BUZZ_SCREW_D / 2, y_plate + BUZZ_POST_H - 4.5, y_plate + BUZZ_POST_H + 0.5, cx, cz, 32))
-    plate = diff(plate, cyl_y(BUZZ_D / 2 + 1.0, Y0 - 1, Y0 + PLATE_T + 1, bzx1 - BUZZ_CYL_IN, bzcz, 96))
+    plate = diff(plate, cyl_y(BUZZ_D / 2 + BUZZ_OPEN_CLEAR / 2, Y0 - 1, Y0 + PLATE_T + 1, bzx1 - BUZZ_CYL_IN, bzcz, 96))
     buzz_board_back_y = y_plate + BUZZ_POST_H + 1.6
     buzz_x0 = bzx1 - BUZZ_W
     cell_x1 = bcx + CELL_D / 2
