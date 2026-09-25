@@ -13,7 +13,7 @@ Files:
 
 ## v4 layout
 
-- Outline like the AirGradient: rounded top corners on the front face, square in the top view.
+- Outline like the AirGradient: all four corners of the front face rounded, square in the top view. A 2 mm flat plate (the floor) sits under the curve so the edge hooks have material to attach to, like the stand's plate under the case.
   64 mm wide (the hook spacing, hooks flush with the sides), 36.2 deep (the case depth), 40 high.
 - **CO sensor** stands on four posts on the back wall, left, rotated 180° so the plug faces right and
   its cable drops through the left floor opening into the case. Its cell faces the round opening in

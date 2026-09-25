@@ -31,7 +31,7 @@ BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot CO board, standing: 37 across (X), 3
 HOLE_DX, HOLE_DZ = 30.0, 25.0
 STANDOFF_H, STANDOFF_D, SCREW_D = 4.0, 6.0, 2.6
 MARGIN = 0.5       # boards this far from the side walls (the back wall is flat, the posts clear the top curves)
-CORNER_R = 6.0     # top corners of the front face (the case has 13 on 131 mm)
+CORNER_R = 6.0     # corners of the front face (the case has 13 on 131 mm)
 OUT_H = 40.0
 # DFRobot DFR0032 buzzer (dimension drawing): 22 x 30 board, two 3.2 holes 15 apart 3.4 in from one
 # short edge, 12 mm buzzer centred 10.9 from that edge, connector on the other edge.
@@ -56,9 +56,12 @@ OUT_D = Y1 - Y0
 def rrect(x0, y0, x1, y1, r):
     return sbox(x0 + r, y0 + r, x1 - r, y1 - r).buffer(r, join_style=1)
 
-def profile(x0, z0, x1, z1, r):
-    """Front-face outline: rounded top corners, square bottom (it sits on the case)."""
-    return rrect(x0, z0 - r, x1, z1, r).intersection(sbox(x0, z0, x1, z1))
+def profile(x0, z0, x1, z1, r, plinth=0.0):
+    """Front-face outline: all four corners rounded. With plinth > 0 a flat plate of that height is
+    kept under the curve, so the hooks at the very edges have something to attach to (the AirGradient
+    stand does the same under the case)."""
+    p = rrect(x0, z0, x1, z1, r)
+    return p.union(sbox(x0, z0, x1, z0 + plinth)) if plinth > 0 else p
 
 def extrude(poly, z0, z1):
     m = trimesh.creation.extrude_polygon(poly, z1 - z0)
@@ -110,7 +113,7 @@ def tongue_from_stand(stand_path, socket_y):
     return m
 
 def main(stand_path):
-    outer = profile(X0, 0, X1, OUT_H, CORNER_R)
+    outer = profile(X0, 0, X1, OUT_H, CORNER_R, plinth=FLOOR)
     inner = profile(X0 + WALL, FLOOR, X1 - WALL, OUT_H - WALL, CORNER_R - WALL)
     body = diff(extrude_y(outer, Y0, Y1), extrude_y(inner, Y0 - 1, Y1 - WALL))   # open at the front
 
