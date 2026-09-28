@@ -978,6 +978,10 @@ String Measurements::toString(bool localServer, AgFirmwareMode fwMode, int rssi)
     }
   }
 
+  if (localServer && !isnan(co)) {
+    root["co"] = ag->round2(co); // local API only; the cloud has no CO field
+  }
+
   root["boot"] = _bootCount;
   root["bootCount"] = _bootCount;
   root["wifi"] = rssi;

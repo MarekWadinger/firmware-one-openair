@@ -6,6 +6,7 @@ Fork of the AirGradient firmware (PlatformIO env `esp32-c3`, source `examples/On
 
 ## Status (2026-09-25)
 
+- CO is exported as `"co"` in the local `/measures/current` JSON (not cloud). Build/flash/check via `make build`, `make flash`, `make check SERIAL=…`.
 - Working on hardware: CO sensor on I2C1 (re-soldered), reading at 0x74, shown as `CO Nppm` in the OLED top row. Buzzer wired to the sensor's ALA pin; firmware sets the 50 ppm threshold at boot. GPIO3 buzzer output is also still in the firmware.
 - ALA pin proven to drive the buzzer. Its rule persists in the sensor across power cycles; firmware sets the 50 ppm rule (with retries, then alarm-off fallback) before the network step at every boot. Buzzer currently disconnected after a stuck test rule; recommendation is to wire green to IO3 instead of ALA.
 - Serial reading from this Mac works: `.venv/bin/python <scratch>/serial_read.py <seconds>` (pyserial in the uv venv), port `/dev/cu.usbmodem1401`.

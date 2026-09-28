@@ -100,7 +100,18 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 /** External CO sensor (DFRobot SEN0466 on I2C1) + passive buzzer (DFRobot DFR0032 on IO1 pin 6) */
 #define CO_I2C_ADDR 0x74
 #define CO_UPDATE_INTERVAL 2000 /** ms */
-#define CO_ALARM_PPM 1          /** beep while CO >= this; tune to taste */
+/**
+ * CO alarm threshold, written to the SEN0466 ALA register at boot (buzzer is on ALA).
+ * The ALA pin is a single instant threshold; time-weighted rules need the buzzer on IO3.
+ *
+ * EN 50291-1 (certified home alarms):  30 ppm silent >= 120 min; 50 ppm alarm in 60-90 min;
+ *   100 ppm alarm in 10-40 min; 300 ppm alarm <= 3 min.
+ * WHO indoor guideline (health, enforced in Home Assistant, not here):
+ *   87 ppm / 15 min; 30 ppm / 1 h; 9 ppm / 8 h; 6 ppm / 24 h.
+ * 50 ppm instant alarms on every EN row earlier than required; the price is a beep on
+ * short spikes (stove door). Raise only if that becomes a nuisance.
+ */
+#define CO_ALARM_PPM 50
 #define TEST_BUZZER_CO2_PPM 0    /** TEST ONLY: also beep while CO2 >= this. 0 = disabled */
 #define BUZZER_PIN 3            /** shared with GPIO_IIC_RESET, only used by an optional cellular card */
 
@@ -1756,6 +1767,7 @@ static void coUpdate(void) {
     wasOk = ok;
   }
   oledDisplay.co = ppm;
+  measurements.co = ppm;
 
   bool alarm = ok && ppm >= CO_ALARM_PPM;
   if (TEST_BUZZER_CO2_PPM > 0 && measurements.getAverage(Measurements::CO2) >= TEST_BUZZER_CO2_PPM) {

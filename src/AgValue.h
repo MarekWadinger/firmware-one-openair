@@ -187,6 +187,9 @@ public:
    */
   String toString(bool localServer, AgFirmwareMode fwMode, int rssi);
 
+  /** CO ppm from the external DFRobot SEN0466, set by the sketch; NAN = no reading */
+  float co = NAN;
+
   Measures getMeasures();
 
   /**
