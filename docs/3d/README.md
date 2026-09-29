@@ -7,9 +7,10 @@ the same as the stand's. The box is centred on the case with both hooks directly
 
 Files:
 
-- `co_sensor_box_body.stl` – the box: closed back, floor, top, sides, hooks. Open at the front.
-- `co_sensor_box_front.stl` – removable front plate with both openings and the buzzer posts.
-- `co_sensor_box.py` – generator. Everything is a parameter at the top of the file.
+- `co_sensor_box.py` – generator. Everything is a parameter at the top of the file. It writes
+  `co_sensor_box_body.stl` (closed back, floor, top, sides, hooks; open at the front) and
+  `co_sensor_box_front.stl` (removable front plate with both openings and the buzzer posts).
+  The STLs are not committed; run the generator (see below) when you need to print.
 
 ## v4 layout
 

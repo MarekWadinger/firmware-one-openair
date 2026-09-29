@@ -9,3 +9,4 @@ logs
 gen_compile_commands.py
 compile_commands.json
 .venv/
+docs/3d/*.stl
