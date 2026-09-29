@@ -360,9 +360,9 @@ void OledDisplay::showDashboard(DashboardStatus status) {
       }
 
       /** External CO sensor: top row, between the status icon and humidity */
-      if (!isnan(co) && status != DashBoardStatusAddToDashboard && status != DashBoardStatusDeviceId) {
+      if (!isnan(value.co) && status != DashBoardStatusAddToDashboard && status != DashBoardStatusDeviceId) {
         DISP()->setFont(u8g2_font_t0_12_tf);
-        snprintf(strBuf, sizeof(strBuf), "CO %dppm", (int)round(co));
+        snprintf(strBuf, sizeof(strBuf), "CO %dppm", (int)round(value.co));
         // right-aligned just before the humidity; overlaps the status icon only with 3-digit CO
         DISP()->drawStr(102 - DISP()->getStrWidth(strBuf), 10, strBuf);
       }

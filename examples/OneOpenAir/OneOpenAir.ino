@@ -97,7 +97,7 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define GPIO_EXPANSION_CARD_POWER 4
 #define GPIO_IIC_RESET 3
 
-/** External CO sensor (DFRobot SEN0466 on I2C1) + passive buzzer (DFRobot DFR0032 on IO1 pin 6) */
+/** External CO sensor (DFRobot SEN0466 on I2C1); the buzzer hangs on the sensor's ALA pin */
 #define CO_I2C_ADDR 0x74
 #define CO_UPDATE_INTERVAL 2000 /** ms */
 /**
@@ -112,8 +112,6 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
  * short spikes (stove door). Raise only if that becomes a nuisance.
  */
 #define CO_ALARM_PPM 50
-#define TEST_BUZZER_CO2_PPM 0    /** TEST ONLY: also beep while CO2 >= this. 0 = disabled */
-#define BUZZER_PIN 3            /** shared with GPIO_IIC_RESET, only used by an optional cellular card */
 
 #define MINUTES() ((uint32_t)(esp_timer_get_time() / 1000 / 1000 / 60))
 
@@ -201,10 +199,6 @@ AgSchedule networkSignalCheckSchedule(10000, networkSignalCheck);
 AgSchedule printMeasurementsSchedule(6000, printMeasurements);
 
 void setup() {
-  /** Buzzer first: a HIGH or floating GPIO3 makes it sound continuously */
-  pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW);
-
   /** Serial for print debug message */
   Serial.begin(115200);
   delay(100); /** For bester show log */
@@ -1125,9 +1119,6 @@ void initializeNetwork() {
   // Check if cellular module available
   agSerial = new AgSerial(Wire);
   agSerial->init(GPIO_IIC_RESET);
-  // ponytail: GPIO3 is the buzzer. Pull it LOW again right away; init() set it HIGH as the
-  // cellular card's reset line. This makes a cellular card undetectable, which this unit has none of.
-  gpio_set_level((gpio_num_t)BUZZER_PIN, 0);
   if (agSerial->open()) {
     Serial.println("Cellular module found");
     // Initialize cellular module and use cellular as agClient
@@ -1749,7 +1740,6 @@ static void coSensorInit(void) {
 
 static void coUpdate(void) {
   static bool wasOk = false;
-  static bool alarmOn = false;
   uint8_t reply[9];
   float ppm = NAN;
   bool ok = coCommand(0x86, 0, reply); // 0x86 = get gas concentration
@@ -1766,21 +1756,7 @@ static void coUpdate(void) {
     Serial.printf("CO sensor %s\n", ok ? "connected" : "not responding");
     wasOk = ok;
   }
-  oledDisplay.co = ppm;
   measurements.co = ppm;
-
-  bool alarm = ok && ppm >= CO_ALARM_PPM;
-  if (TEST_BUZZER_CO2_PPM > 0 && measurements.getAverage(Measurements::CO2) >= TEST_BUZZER_CO2_PPM) {
-    alarm = true;
-  }
-  if (alarm) {
-    tone(BUZZER_PIN, 2000, CO_UPDATE_INTERVAL / 2); // beep half of every cycle
-  } else if (alarmOn) {
-    noTone(BUZZER_PIN);
-    pinMode(BUZZER_PIN, OUTPUT); // noTone detaches the pin; drive it LOW again
-    digitalWrite(BUZZER_PIN, LOW);
-  }
-  alarmOn = alarm;
 }
 
 /* Set max period for each measurement type based on sensor update interval*/

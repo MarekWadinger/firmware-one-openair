@@ -40,7 +40,6 @@ public:
     DashBoardStatusOfflineMode,
   };
 
-  float co = NAN; // CO ppm from the external DFRobot SEN0466, NAN = no reading
 
   void setAirGradient(AirGradient *ag);
   bool begin(void);
