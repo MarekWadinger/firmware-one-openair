@@ -1,7 +1,7 @@
 PORT ?= /dev/cu.usbmodem1401
 DEVICE ?= airgradient_$(SERIAL).local
 
-.PHONY: build flash monitor check
+.PHONY: build flash monitor check update-upstream
 
 ## Compile the esp32-c3 firmware
 build:
@@ -18,3 +18,8 @@ monitor:
 ## Verify the local API exposes CO: make check SERIAL=<serial> (or DEVICE=<ip>)
 check:
 	curl -s http://$(DEVICE)/measures/current | python3 -m json.tool | grep -E '"(co|serialno|firmware)"'
+
+## Merge the latest upstream AirGradient firmware into this branch and rebuild
+update-upstream:
+	git pull --no-rebase origin master
+	$(MAKE) build
