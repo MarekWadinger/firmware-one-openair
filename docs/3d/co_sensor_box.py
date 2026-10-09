@@ -146,9 +146,13 @@ def main(stand_path):
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, ymid - 2, yb, ymid + 2, 1.9), OUT_H - WALL - 1, OUT_H + 1))
 
-    # hooks under the floor
+    # hooks under the floor, each on a pad that fills the corner curve above it so the hook
+    # grows out of solid material instead of meeting the curved edge
     for sy in SOCKET_Y:
-        body = union(body, tongue_from_stand(stand_path, sy))
+        hook = tongue_from_stand(stand_path, sy)
+        hb = hook.bounds
+        pad = extrude(sbox(hb[0][0], hb[0][1], hb[1][0], Y1), -0.01, FLOOR)
+        body = union(body, union(hook, pad))
 
     # front plate: outer profile, inner lip, CO cell opening, buzzer posts + opening
     plate = extrude_y(outer, Y0, Y0 + PLATE_T)
