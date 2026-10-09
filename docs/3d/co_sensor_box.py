@@ -103,9 +103,13 @@ def tongue_from_stand(stand_path, socket_y):
         M = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, -65.6], [0, 0, 0, 1]], float)   # reflection; trimesh flips faces
         t.apply_transform(M)
         # shave the head's top so the gap under the floor is LIP_T + clearance (head bottom and reach stay)
-        cut = trimesh.creation.box(extents=[20, 200, LIP_T + HOOK_GAP_CLEAR - 0.01])
-        cut.apply_translation([-112.5, 13.2 - 100, -(LIP_T + HOOK_GAP_CLEAR) / 2 - 0.005])   # Y < 13.2, Z above -(lip+clear)
-        t = trimesh.boolean.difference([t, cut], engine="manifold")
+        g = LIP_T + HOOK_GAP_CLEAR
+        cut1 = trimesh.creation.box(extents=[20, 200, g - 0.01])           # Y < 10: full gap height
+        cut1.apply_translation([-112.5, 10.0 - 100, -g / 2 - 0.005])
+        cut2 = trimesh.creation.box(extents=[20, 200, g - LIP_T + 0.05])  # Y < 13.2: only the thin strip, keeps the ramp
+        cut2.apply_translation([-112.5, 13.2 - 100, -(g + LIP_T - 0.05) / 2])
+        t = trimesh.boolean.difference([t, cut1], engine="manifold")
+        t = trimesh.boolean.difference([t, cut2], engine="manifold")
         _STAND["mesh"] = t
     m = _STAND["mesh"].copy()
     m.apply_translation([socket_y - (-112.5), 0, 0])
