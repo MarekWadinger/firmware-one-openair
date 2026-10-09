@@ -31,7 +31,7 @@ BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot CO board, standing: 37 across (X), 3
 HOLE_DX, HOLE_DZ = 30.0, 25.0
 STANDOFF_H, STANDOFF_D, SCREW_D = 2.5, 6.0, 2.6   # 2.5 puts the cell face 0.5 mm proud of the plate
 MARGIN = 0.5       # boards this far from the side walls (the back wall is flat, the posts clear the top curves)
-CORNER_R = 6.0     # corners of the front face (the case has 13 on 131 mm)
+CORNER_R = 7.5     # corners of the front face; same proportion as the case (13.5 on 131)
 OUT_H = 40.0
 # DFRobot DFR0032 buzzer (dimension drawing): 22 x 30 board, two 3.2 holes 15 apart 3.4 in from one
 # short edge, 12 mm buzzer centred 10.9 from that edge, connector on the other edge.
