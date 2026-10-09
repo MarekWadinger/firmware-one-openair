@@ -26,6 +26,7 @@ WALL = 1.6
 FLOOR = 2.0
 PLATE_T = 2.0      # front plate
 PLATE_LIP = 3.0
+BACK_SLOPE_D, BACK_SLOPE_H = 2.2, 3.0   # 45-ish slope on the top-rear edge, as on the case (measured)
 FRONT_EDGE_R = 1.0 # round on the plate's outer front edge, same as the case's front edge (measured)
 CLEAR = 0.2
 BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot CO board, standing: 37 across (X), 32 tall (Z)
@@ -84,6 +85,11 @@ def extrude_y(poly_xz, y0, y1):
 def union(a, b):  return trimesh.boolean.union([a, b], engine="manifold")
 def diff(a, b):   return trimesh.boolean.difference([a, b], engine="manifold")
 
+def extrude_x(poly_yz, x0, x1):
+    m = trimesh.creation.extrude_polygon(poly_yz, x1 - x0)
+    v = m.vertices
+    return trimesh.Trimesh(np.c_[v[:, 2] + x0, v[:, 0], v[:, 1]], m.faces)   # cyclic permutation, no flip
+
 def cyl_y(r, y0, y1, x, z, n=64):
     c = trimesh.creation.cylinder(radius=r, height=y1 - y0, sections=n)
     c.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
@@ -140,6 +146,15 @@ def main(stand_path):
     ymid = (Y0 + Y1) / 2
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, ymid - 2, yb, ymid + 2, 1.9), OUT_H - WALL - 1, OUT_H + 1))
+
+    # slope on the top-rear edge, like the case's
+    wedge = Polygon([(Y1 - BACK_SLOPE_D, OUT_H + 1), (Y1 - BACK_SLOPE_D, OUT_H), (Y1, OUT_H - BACK_SLOPE_H),
+                     (Y1 + 1, OUT_H - BACK_SLOPE_H), (Y1 + 1, OUT_H + 1)])
+    body = diff(body, extrude_x(wedge, X0 - 1, X1 + 1))
+    # fill the matching inner corner so the wall stays WALL thick along the slope
+    inner_fill = Polygon([(Y1 - WALL - BACK_SLOPE_D, OUT_H - WALL + 0.01), (Y1 - WALL + 0.01, OUT_H - WALL + 0.01),
+                          (Y1 - WALL + 0.01, OUT_H - WALL - BACK_SLOPE_H)])
+    body = union(body, extrude_x(inner_fill, X0 + WALL - 0.01, X1 - WALL + 0.01))
 
     # hooks under the floor; each hook's outer side continues straight up until it meets the
     # corner curve (a ~0.6 mm step), so the hook grows out of solid material
