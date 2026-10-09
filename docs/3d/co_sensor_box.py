@@ -146,9 +146,15 @@ def main(stand_path):
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, ymid - 2, yb, ymid + 2, 1.9), OUT_H - WALL - 1, OUT_H + 1))
 
-    # hooks under the floor
+    # hooks under the floor; each hook's footprint is continued upward until it meets the box's
+    # outer surface (clipped to the outline, so the corner curve is untouched from outside)
+    shell = extrude_y(outer, Y0, Y1)
     for sy in SOCKET_Y:
-        body = union(body, tongue_from_stand(stand_path, sy))
+        hook = tongue_from_stand(stand_path, sy)
+        hb = hook.bounds
+        fill = extrude(sbox(hb[0][0], hb[0][1], hb[1][0], Y1), -0.01, FLOOR)
+        fill = trimesh.boolean.intersection([fill, shell], engine="manifold")
+        body = union(body, union(hook, fill))
 
     # front plate: outer profile, inner lip, CO cell opening, buzzer posts + opening
     plate = extrude_y(outer, Y0, Y0 + PLATE_T)
