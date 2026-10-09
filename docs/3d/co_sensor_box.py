@@ -130,7 +130,7 @@ def tongue_from_stand(stand_path, socket_y):
         st = trimesh.load(stand_path)
         if not st.is_volume:
             trimesh.repair.fix_normals(st); trimesh.repair.fix_winding(st); st.merge_vertices()
-        zmax = CASE_BACK_Z - BACK_SLOPE_D                                  # tail ends where the box's rear slope begins
+        zmax = CASE_BACK_Z                                                 # tail reaches the back plane: it stands on the bed when printing
         region = trimesh.creation.box(extents=[15.9, 5.5, zmax - 2.0])      # x -65.9..-50, y around the socket, z 2..zmax
         region.apply_translation([-65.9 + 15.9 / 2, -112.5, (2.0 + zmax) / 2])
         t = trimesh.boolean.intersection([st, region], engine="manifold")
