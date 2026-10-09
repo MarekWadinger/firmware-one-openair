@@ -26,6 +26,7 @@ WALL = 1.6
 FLOOR = 2.0
 PLATE_T = 2.0      # front plate
 PLATE_LIP = 3.0
+FRONT_EDGE_R = 1.0 # round on the plate's outer front edge, same as the case's front edge (measured)
 CLEAR = 0.2
 BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot CO board, standing: 37 across (X), 32 tall (Z)
 HOLE_DX, HOLE_DZ = 30.0, 25.0
@@ -149,7 +150,15 @@ def main(stand_path):
         body = union(body, union(hook, fill))
 
     # front plate: outer profile, inner lip, CO cell opening, buzzer posts + opening
-    plate = extrude_y(outer, Y0, Y0 + PLATE_T)
+    # plate with a rounded front edge: stacked thin slices, each inset by the circle's profile
+    n = 10
+    slices = []
+    for i in range(n):
+        d0, d1 = FRONT_EDGE_R * i / n, FRONT_EDGE_R * (i + 1) / n
+        inset = FRONT_EDGE_R - np.sqrt(FRONT_EDGE_R ** 2 - (FRONT_EDGE_R - d0) ** 2)
+        slices.append(extrude_y(outer.buffer(-inset, join_style=1), Y0 + d0, Y0 + d1 + 0.001))
+    slices.append(extrude_y(outer, Y0 + FRONT_EDGE_R, Y0 + PLATE_T))
+    plate = trimesh.boolean.union(slices, engine="manifold")
     lip_out = profile(X0 + WALL + CLEAR, FLOOR + CLEAR, X1 - WALL - CLEAR, OUT_H - WALL - CLEAR, CORNER_R - WALL)
     lip_in = profile(X0 + WALL + CLEAR + 1.2, FLOOR + CLEAR + 1.2, X1 - WALL - CLEAR - 1.2, OUT_H - WALL - CLEAR - 1.2, max(CORNER_R - WALL - 1.2, 0.5))
     plate = union(plate, extrude_y(Polygon(lip_out.exterior.coords, [lip_in.exterior.coords]), Y0 + PLATE_T, Y0 + PLATE_T + PLATE_LIP))
