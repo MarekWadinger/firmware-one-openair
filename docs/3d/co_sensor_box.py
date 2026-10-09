@@ -178,8 +178,15 @@ def main(stand_path):
 
     # hooks under the floor; each hook's outer side continues straight up until it meets the
     # corner curve (a ~0.6 mm step), so the hook grows out of solid material
+    # heel: the hook tail's back face gets the same slope as the box's rear edge, with a small flat
+    # at the bottom so it still stands on the bed when the body prints on its back wall
+    HEEL_FLAT = 1.8
+    tail_bottom = -5.8                                             # where the stand's ramp meets the back plane
+    zc = tail_bottom + HEEL_FLAT
+    yc = Y1 - (0.5 - zc) * BACK_SLOPE_D / BACK_SLOPE_H
+    heel_cut = extrude_x(Polygon([(Y1, zc), (yc, 0.5), (Y1 + 1, 0.5), (Y1 + 1, zc)]), X0 - 1, X1 + 1)
     for sy in SOCKET_Y:
-        hook = tongue_from_stand(stand_path, sy)
+        hook = diff(tongue_from_stand(stand_path, sy), heel_cut)
         hb = hook.bounds
         fill = extrude(sbox(hb[0][0], hb[0][1], hb[1][0], Y1 - BACK_SLOPE_D), -0.01, FLOOR)
         body = union(body, union(hook, fill))
