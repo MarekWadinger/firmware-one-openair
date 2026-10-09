@@ -113,6 +113,8 @@ def tongue_from_stand(stand_path, socket_y):
     yz = Polygon([(z, -65.6 - x) for x, z in prof.exterior.coords])
     # shave the head's top so the gap under the floor is LIP_T + clearance; the head's bottom and
     # reach stay as on the stand, which is proven to fit the pocket
+    # the cut runs to the foot of the stand's ramp (Y~13.2) so the head's top is one flat surface
+    yz = yz.difference(sb(-100, -(LIP_T + HOOK_GAP_CLEAR), 13.2, -LIP_T + 0.05))
     yz = yz.difference(sb(-100, -(LIP_T + HOOK_GAP_CLEAR), 10.0, -0.01))
     m = trimesh.creation.extrude_polygon(yz, 4.0)           # local (u, v, w) = (Y, Z, X-thickness)
     v = m.vertices
