@@ -85,6 +85,32 @@ def extrude_y(poly_xz, y0, y1):
 def union(a, b):  return trimesh.boolean.union([a, b], engine="manifold")
 def diff(a, b):   return trimesh.boolean.difference([a, b], engine="manifold")
 
+def extrude_y_back_slope(poly_xz, y0, y1, depth, drop, r=None, step=0.1):
+    """Extrude along Y, with the outline shrinking by `drop` over the last `depth` mm (a slope on every
+    rear edge, as on the case). Both edges of the slope are rounded with radius r. Thin slices."""
+    r = FRONT_EDGE_R if r is None else r
+    # material in (y, inset) space; convex corners rounded by a negative then positive buffer
+    prof = Polygon([(y0 - 1, 0), (y1 - depth, 0), (y1, drop), (y1, drop + 50), (y0 - 1, drop + 50)])
+    prof = prof.buffer(-r, join_style=1).buffer(r, join_style=1)
+    from shapely.geometry import LineString
+    def inset_at(y):
+        hit = prof.intersection(LineString([(y, -1), (y, drop + 60)]))
+        return hit.bounds[1] if not hit.is_empty else None
+    ys = np.arange(y1 - depth - r - step, y1 + 1e-6, step)
+    parts = [extrude_y(poly_xz, y0, ys[0] + 0.001)]
+    for ya in ys:
+        yb = min(ya + step, y1)
+        if yb - ya < 1e-4:
+            continue
+        ins = inset_at(ya + 1e-4)
+        if ins is None:
+            continue
+        pg = poly_xz.buffer(-ins, join_style=1)
+        if pg.is_empty:
+            continue
+        parts.append(extrude_y(pg, ya, yb + 0.001))
+    return trimesh.boolean.union(parts, engine="manifold")
+
 def extrude_x(poly_yz, x0, x1):
     m = trimesh.creation.extrude_polygon(poly_yz, x1 - x0)
     v = m.vertices
@@ -104,8 +130,9 @@ def tongue_from_stand(stand_path, socket_y):
         st = trimesh.load(stand_path)
         if not st.is_volume:
             trimesh.repair.fix_normals(st); trimesh.repair.fix_winding(st); st.merge_vertices()
-        region = trimesh.creation.box(extents=[15.9, 5.5, 18.6])          # x -65.9..-50, y around the socket, z 2..20.6
-        region.apply_translation([-65.9 + 15.9 / 2, -112.5, 2.0 + 18.6 / 2])
+        zmax = CASE_BACK_Z - BACK_SLOPE_D                                  # tail ends where the box's rear slope begins
+        region = trimesh.creation.box(extents=[15.9, 5.5, zmax - 2.0])      # x -65.9..-50, y around the socket, z 2..zmax
+        region.apply_translation([-65.9 + 15.9 / 2, -112.5, (2.0 + zmax) / 2])
         t = trimesh.boolean.intersection([st, region], engine="manifold")
         M = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, -65.6], [0, 0, 0, 1]], float)   # reflection; trimesh flips faces
         t.apply_transform(M)
@@ -125,7 +152,9 @@ def tongue_from_stand(stand_path, socket_y):
 def main(stand_path):
     outer = profile(X0, 0, X1, OUT_H, CORNER_R)
     inner = profile(X0 + WALL, FLOOR, X1 - WALL, OUT_H - WALL, CORNER_R - WALL)
-    body = diff(extrude_y(outer, Y0, Y1), extrude_y(inner, Y0 - 1, Y1 - WALL))   # open at the front
+    shell = extrude_y_back_slope(outer, Y0, Y1, BACK_SLOPE_D, BACK_SLOPE_H)
+    cavity = extrude_y_back_slope(inner, Y0 - 1, Y1 - WALL, BACK_SLOPE_D, BACK_SLOPE_H)
+    body = diff(shell, cavity)   # open at the front, 1.6 mm wall everywhere including along the slope
 
     # CO board on the back wall, left, plug facing right (board rotated 180 deg)
     bcx = X0 + WALL + MARGIN + BOARD_W / 2
@@ -147,21 +176,12 @@ def main(stand_path):
     for (ya, yb) in CASE_VENTS_BETWEEN_SOCKETS:
         body = diff(body, extrude(rrect(ya, ymid - 2, yb, ymid + 2, 1.9), OUT_H - WALL - 1, OUT_H + 1))
 
-    # slope on the top-rear edge, like the case's
-    wedge = Polygon([(Y1 - BACK_SLOPE_D, OUT_H + 1), (Y1 - BACK_SLOPE_D, OUT_H), (Y1, OUT_H - BACK_SLOPE_H),
-                     (Y1 + 1, OUT_H - BACK_SLOPE_H), (Y1 + 1, OUT_H + 1)])
-    body = diff(body, extrude_x(wedge, X0 - 1, X1 + 1))
-    # fill the matching inner corner so the wall stays WALL thick along the slope
-    inner_fill = Polygon([(Y1 - WALL - BACK_SLOPE_D, OUT_H - WALL + 0.01), (Y1 - WALL + 0.01, OUT_H - WALL + 0.01),
-                          (Y1 - WALL + 0.01, OUT_H - WALL - BACK_SLOPE_H)])
-    body = union(body, extrude_x(inner_fill, X0 + WALL - 0.01, X1 - WALL + 0.01))
-
     # hooks under the floor; each hook's outer side continues straight up until it meets the
     # corner curve (a ~0.6 mm step), so the hook grows out of solid material
     for sy in SOCKET_Y:
         hook = tongue_from_stand(stand_path, sy)
         hb = hook.bounds
-        fill = extrude(sbox(hb[0][0], hb[0][1], hb[1][0], Y1), -0.01, FLOOR)
+        fill = extrude(sbox(hb[0][0], hb[0][1], hb[1][0], Y1 - BACK_SLOPE_D), -0.01, FLOOR)
         body = union(body, union(hook, fill))
 
     # front plate: outer profile, inner lip, CO cell opening, buzzer posts + opening
