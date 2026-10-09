@@ -20,7 +20,7 @@ from shapely.geometry import box as sbox, Polygon
 from shapely.affinity import translate
 
 # ---- tunables (mm) --------------------------------------------------------
-CELL_H = 25.0      # height of the black electrochemical cell above the board (measured)
+CELL_H = 26.1      # height of the cell above the PCB (measured)
 CELL_D = 24.0      # diameter of the cell (measured)
 WALL = 1.6
 FLOOR = 2.0
@@ -29,7 +29,7 @@ PLATE_LIP = 3.0
 CLEAR = 0.2
 BOARD_W, BOARD_H = 37.0, 32.0     # DFRobot CO board, standing: 37 across (X), 32 tall (Z)
 HOLE_DX, HOLE_DZ = 30.0, 25.0
-STANDOFF_H, STANDOFF_D, SCREW_D = 4.0, 6.0, 2.6
+STANDOFF_H, STANDOFF_D, SCREW_D = 2.5, 6.0, 2.6   # 2.5 puts the cell face 0.5 mm proud of the plate
 MARGIN = 0.5       # boards this far from the side walls (the back wall is flat, the posts clear the top curves)
 CORNER_R = 6.0     # corners of the front face (the case has 13 on 131 mm)
 OUT_H = 40.0
@@ -37,7 +37,7 @@ OUT_H = 40.0
 # short edge, 12 mm buzzer centred 10.9 from that edge, connector on the other edge.
 BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right edge, connector left
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
-BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 8.0   # cylinder height measured
+BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 9.3   # cylinder height measured
 BUZZ_POST_H = 6.5                 # board this far behind the front plate; buzzer ends 0.5 mm behind the plate face
 CELL_OPEN_CLEAR = 1.0             # front openings: this much wider than the part (0 = frames it, part stays behind)
 BUZZ_OPEN_CLEAR = 0.0
