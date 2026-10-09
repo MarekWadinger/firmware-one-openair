@@ -39,8 +39,8 @@ BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right ed
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
 BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 11.78, 10.9, 9.3   # diameter and height measured
 BUZZ_POST_H = 6.5                 # board this far behind the front plate; buzzer ends 0.5 mm behind the plate face
-CELL_OPEN_CLEAR = 0.8             # front openings: file = part + 0.8; prints ~0.4 narrower, leaves ~0.4 air
-BUZZ_OPEN_CLEAR = 0.8
+CELL_OPEN_CLEAR = 0.5             # front openings: file = part + 0.5; prints ~0.4 narrower, snug
+BUZZ_OPEN_CLEAR = 0.5
 
 # ---- from the case STL (case coordinates) ---------------------------------
 SOCKET_Y = (-112.5, -52.5)        # socket centres, 60 mm apart, same top and bottom
