@@ -21,7 +21,7 @@ from shapely.affinity import translate
 
 # ---- tunables (mm) --------------------------------------------------------
 CELL_H = 26.1      # height of the cell above the PCB (measured)
-CELL_D = 24.0      # diameter of the cell (measured)
+CELL_D = 23.34     # diameter of the cell (measured)
 WALL = 1.6
 FLOOR = 2.0
 PLATE_T = 2.0      # front plate
@@ -37,10 +37,10 @@ OUT_H = 40.0
 # short edge, 12 mm buzzer centred 10.9 from that edge, connector on the other edge.
 BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right edge, connector left
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
-BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 9.3   # cylinder height measured
+BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 11.78, 10.9, 9.3   # diameter and height measured
 BUZZ_POST_H = 6.5                 # board this far behind the front plate; buzzer ends 0.5 mm behind the plate face
-CELL_OPEN_CLEAR = 1.0             # front openings: this much wider than the part (0 = frames it, part stays behind)
-BUZZ_OPEN_CLEAR = 0.0
+CELL_OPEN_CLEAR = 0.8             # front openings: file = part + 0.8; prints ~0.4 narrower, leaves ~0.4 air
+BUZZ_OPEN_CLEAR = 0.8
 
 # ---- from the case STL (case coordinates) ---------------------------------
 SOCKET_Y = (-112.5, -52.5)        # socket centres, 60 mm apart, same top and bottom
