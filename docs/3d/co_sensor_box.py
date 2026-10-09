@@ -124,7 +124,7 @@ def main(stand_path):
 
     # CO board on the back wall, left, plug facing right (board rotated 180 deg)
     bcx = X0 + WALL + MARGIN + BOARD_W / 2
-    bcz = FLOOR + 0.5 + BOARD_H / 2
+    bcz = (FLOOR + OUT_H - WALL) / 2          # both boards centred in the cavity
     y_back = Y1 - WALL
     for sx in (-1, 1):
         for sz in (-1, 1):
