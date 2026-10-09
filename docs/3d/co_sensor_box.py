@@ -89,39 +89,27 @@ def cyl_y(r, y0, y1, x, z, n=64):
     c.apply_translation([x, (y0 + y1) / 2, z])
     return c
 
+_STAND = {}
 def tongue_from_stand(stand_path, socket_y):
-    """The stand's hook profile (x-z section through the stand at its socket), extruded 4 mm,
-    moved to a top socket. Case (x,y,z) -> box (X,Y,Z) = (y, z, -65.6 - x)."""
-    from shapely.geometry import box as sb
-    from shapely.ops import unary_union
-    st = trimesh.load(stand_path)
-    sec = st.section(plane_origin=[0, -112.5, 0], plane_normal=[0, 1, 0])
-    p2, T = sec.to_2D()
-    polys = [pg for pg in p2.polygons_full]
-    # p2 coordinates are the section plane's own frame; recover case x,z via T
-    def to_case(pts2):
-        pts3 = np.c_[pts2, np.zeros(len(pts2)), np.ones(len(pts2))] @ T.T
-        return pts3[:, [0, 2]]
-    shapes = []
-    for pg in polys:
-        ext = to_case(np.array(pg.exterior.coords))
-        shapes.append(Polygon(ext, [to_case(np.array(i.coords)) for i in pg.interiors]))
-    prof = unary_union(shapes).intersection(sb(-65.6 - 0.3, 2.0, -50, Y1))   # hook + the block filling the case's rear recess, cut flush with the box's back
-    if prof.geom_type != "Polygon":
-        prof = max(prof.geoms, key=lambda g: g.area)
-    # profile in (Y, Z) = (z, -65.6 - x)
-    yz = Polygon([(z, -65.6 - x) for x, z in prof.exterior.coords])
-    # shave the head's top so the gap under the floor is LIP_T + clearance; the head's bottom and
-    # reach stay as on the stand, which is proven to fit the pocket
-    # the cut runs to the foot of the stand's ramp (Y~13.2) so the head's top is one flat surface
-    yz = yz.difference(sb(-100, -(LIP_T + HOOK_GAP_CLEAR), 13.2, -LIP_T + 0.05))
-    yz = yz.difference(sb(-100, -(LIP_T + HOOK_GAP_CLEAR), 10.0, -0.01))
-    m = trimesh.creation.extrude_polygon(yz, 4.0)           # local (u, v, w) = (Y, Z, X-thickness)
-    v = m.vertices
-    m = trimesh.Trimesh(np.c_[v[:, 2] + socket_y - 2.0, v[:, 0], v[:, 1]], m.faces)  # cyclic permutation, no flip
-    if not m.is_volume:
-        m.fix_normals()
-    return m   # the 0.3 mm strip beyond the face plane sits inside the floor: a solid joint
+    """A true 3D copy of the stand's tongue (with its taper and chamfers), moved to a top socket.
+    Case (x,y,z) -> box (X,Y,Z) = (y, z, -65.6 - x)."""
+    if "mesh" not in _STAND:
+        st = trimesh.load(stand_path)
+        if not st.is_volume:
+            trimesh.repair.fix_normals(st); trimesh.repair.fix_winding(st); st.merge_vertices()
+        region = trimesh.creation.box(extents=[15.9, 5.5, 18.6])          # x -65.9..-50, y around the socket, z 2..20.6
+        region.apply_translation([-65.9 + 15.9 / 2, -112.5, 2.0 + 18.6 / 2])
+        t = trimesh.boolean.intersection([st, region], engine="manifold")
+        M = np.array([[0, 1, 0, 0], [0, 0, 1, 0], [-1, 0, 0, -65.6], [0, 0, 0, 1]], float)   # reflection; trimesh flips faces
+        t.apply_transform(M)
+        # shave the head's top so the gap under the floor is LIP_T + clearance (head bottom and reach stay)
+        cut = trimesh.creation.box(extents=[20, 200, LIP_T + HOOK_GAP_CLEAR - 0.01])
+        cut.apply_translation([-112.5, 13.2 - 100, -(LIP_T + HOOK_GAP_CLEAR) / 2 - 0.005])   # Y < 13.2, Z above -(lip+clear)
+        t = trimesh.boolean.difference([t, cut], engine="manifold")
+        _STAND["mesh"] = t
+    m = _STAND["mesh"].copy()
+    m.apply_translation([socket_y - (-112.5), 0, 0])
+    return m
 
 def main(stand_path):
     outer = profile(X0, 0, X1, OUT_H, CORNER_R)
