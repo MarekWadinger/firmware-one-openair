@@ -36,9 +36,9 @@ The generator prints the cell-to-buzzer clearance.
 ## Regenerate
 
 ```
-curl -sL -o /tmp/stand.zip https://www.airgradient.com/documents/diy-pro/airgradient-stand-stl.zip
-unzip -o /tmp/stand.zip -d /tmp/stand
-.venv/bin/python docs/3d/co_sensor_box.py /tmp/stand/airgradient-stand-stl.stl
+
+
+.venv/bin/python docs/3d/co_sensor_box.py docs/3d/reference/airgradient-stand-stl.stl
 ```
 
 Needs `uv pip install trimesh manifold3d shapely scipy networkx rtree numpy` in the project venv.
