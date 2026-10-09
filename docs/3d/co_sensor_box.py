@@ -45,6 +45,8 @@ BUZZ_OPEN_CLEAR = 0.0
 # ---- from the case STL (case coordinates) ---------------------------------
 SOCKET_Y = (-112.5, -52.5)        # socket centres, 60 mm apart, same top and bottom
 HOOK_W = 4.0
+LIP_T = 3.0                       # case lip the hook head slides under (from the case model, confirmed on the real unit)
+HOOK_GAP_CLEAR = 0.4              # printed slots come out ~0.2 narrow; 3.4 modelled -> ~3.2 printed
 CASE_FRONT_Z, CASE_BACK_Z = -15.6, 20.6
 CASE_VENTS_BETWEEN_SOCKETS = [(-108.0, -87.0), (-78.0, -57.0)]
 VENT_Z = (-2.0, 2.0)
@@ -109,13 +111,15 @@ def tongue_from_stand(stand_path, socket_y):
         prof = max(prof.geoms, key=lambda g: g.area)
     # profile in (Y, Z) = (z, -65.6 - x)
     yz = Polygon([(z, -65.6 - x) for x, z in prof.exterior.coords])
+    # shave the head's top so the gap under the floor is LIP_T + clearance; the head's bottom and
+    # reach stay as on the stand, which is proven to fit the pocket
+    yz = yz.difference(sb(-100, -(LIP_T + HOOK_GAP_CLEAR), 10.0, -0.01))
     m = trimesh.creation.extrude_polygon(yz, 4.0)           # local (u, v, w) = (Y, Z, X-thickness)
     v = m.vertices
     m = trimesh.Trimesh(np.c_[v[:, 2] + socket_y - 2.0, v[:, 0], v[:, 1]], m.faces)  # cyclic permutation, no flip
     if not m.is_volume:
         m.fix_normals()
-    m.apply_translation([0, 0, 0.3])   # top 0.3 mm inside the floor: a solid joint, not a touching face
-    return m
+    return m   # the 0.3 mm strip beyond the face plane sits inside the floor: a solid joint
 
 def main(stand_path):
     outer = profile(X0, 0, X1, OUT_H, CORNER_R)

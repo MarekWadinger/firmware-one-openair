@@ -70,4 +70,4 @@ has slots over the case's vent slots so the case still breathes.
 | Buzzer posts | 15 mm apart on the front plate, Ø6, 6.5 high, 2.6 holes |
 | Front openings | Ø 24 (CO cell), Ø 12 (buzzer), parts sit just behind |
 | Floor openings | 21 × 4, at the case's vent positions between the sockets |
-| Hooks | 4 thick, 8.7 deep, 60 mm apart, profile copied from the stand |
+| Hooks | 4 thick, 8.7 deep, 60 mm apart, profile copied from the stand; head top shaved for a 3.4 mm gap under the 3.0 mm lip |
