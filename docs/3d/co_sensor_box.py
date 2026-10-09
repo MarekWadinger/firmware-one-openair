@@ -180,7 +180,7 @@ def main(stand_path):
     # corner curve (a ~0.6 mm step), so the hook grows out of solid material
     # heel: the hook tail's back face gets the same slope as the box's rear edge, with a small flat
     # at the bottom so it still stands on the bed when the body prints on its back wall
-    HEEL_FLAT = 1.8
+    HEEL_FLAT = 5.8 - BACK_SLOPE_H                                  # the slope is exactly the body's 2.2 x 3; the rest stays vertical
     tail_bottom = -5.8                                             # where the stand's ramp meets the back plane
     zc = tail_bottom + HEEL_FLAT
     yc = Y1 - (0.5 - zc) * BACK_SLOPE_D / BACK_SLOPE_H
