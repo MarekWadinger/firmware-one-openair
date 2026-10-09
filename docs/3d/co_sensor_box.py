@@ -39,7 +39,7 @@ BUZZ_W, BUZZ_H = 30.0, 22.0       # 30 mm side horizontal, holes on the right ed
 BUZZ_HOLE_DZ, BUZZ_HOLE_IN, BUZZ_SCREW_D = 15.0, 3.4, 2.6
 BUZZ_D, BUZZ_CYL_IN, BUZZ_CYL_H = 12.0, 10.9, 8.0   # cylinder height measured
 BUZZ_POST_H = 6.5                 # board this far behind the front plate; buzzer ends 0.5 mm behind the plate face
-CELL_OPEN_CLEAR = 0.0             # front openings: this much wider than the part (0 = frames it, part stays behind)
+CELL_OPEN_CLEAR = 1.0             # front openings: this much wider than the part (0 = frames it, part stays behind)
 BUZZ_OPEN_CLEAR = 0.0
 
 # ---- from the case STL (case coordinates) ---------------------------------
