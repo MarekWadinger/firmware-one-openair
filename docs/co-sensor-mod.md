@@ -38,7 +38,7 @@ Both hardware UARTs are taken (CO2 + PMS), so the CO sensor must use I2C.
 | Ref | Type | Pins | Notes |
 | --- | --- | --- | --- |
 | **I2C1** | 4× 2.54 mm through-hole, unpopulated | 1=3.3V, 2=GND, 3=SCL, 4=SDA | **CO sensor is here.** Near SHT1. |
-| I2C2 | 4× 2.54 mm, unpopulated | 1=3.3V, 2=GND, 3=SCL, 4=SDA | Spare, identical. Same row as I2C3/BME. |
+| I2C2 | 4× 2.54 mm, unpopulated | 1=3.3V, 2=GND, 3=SCL, 4=SDA | Spare, identical. Same row as I2C3/BME. Planned thermal camera fallback: `docs/thermal-camera-mod.md` |
 | I2C3 | 4× 2.54 mm socket | 3.3V, GND, SCL, SDA | SGP41 TVOC/NOx module |
 | SHT1 | 4× 2.54 mm socket | 3.3V, GND, SCL, SDA | SHT4x temp/humidity module |
 | BME | 6× 2.54 mm, unpopulated | 3.3V, GND, SCL, SDA, NC, NC | Unsupported by firmware. Planned pressure sensor: `docs/pressure-sensor-mod.md` |
