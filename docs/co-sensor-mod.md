@@ -41,7 +41,7 @@ Both hardware UARTs are taken (CO2 + PMS), so the CO sensor must use I2C.
 | I2C2 | 4× 2.54 mm, unpopulated | 1=3.3V, 2=GND, 3=SCL, 4=SDA | Spare, identical. Same row as I2C3/BME. |
 | I2C3 | 4× 2.54 mm socket | 3.3V, GND, SCL, SDA | SGP41 TVOC/NOx module |
 | SHT1 | 4× 2.54 mm socket | 3.3V, GND, SCL, SDA | SHT4x temp/humidity module |
-| BME | 6× 2.54 mm, unpopulated | 3.3V, GND, SCL, SDA, NC, NC | Unsupported by firmware |
+| BME | 6× 2.54 mm, unpopulated | 3.3V, GND, SCL, SDA, NC, NC | Unsupported by firmware. Planned pressure sensor: `docs/pressure-sensor-mod.md` |
 | OLED1 | 4× 2.54 mm socket | 5V, GND, SCL, SDA | Display, 0x3C |
 | **IO1** | Molex PicoBlade 53261-0871, 8P 1.25 mm | 1=5V, 2=GND, 3=3.3V, 4=IO5, 5=IO4, 6=IO3, 7=SCL, 8=SDA | **Buzzer is here** (pins 1, 2, 6). Pins 3, 2, 7, 8 are a soldering-free fallback for the CO sensor if I2C1 is damaged. |
 | PM2 | Same PicoBlade 8P | 1=5V, 2=GND, 4=TX_1, 5=RX_1 | Particle sensor. Looks identical to IO1, do not confuse. |
